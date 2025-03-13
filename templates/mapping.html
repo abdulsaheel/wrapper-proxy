@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Mappings</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid black; padding: 10px; text-align: left; }
+        th { background-color: #f4f4f4; }
+    </style>
+</head>
+<body>
+    <h2>Active Service Mappings</h2>
+    <table>
+        <tr>
+            <th>Service Name</th>
+        </tr>
+        {% for mapping in mappings %}
+        <tr>
+            <td>
+                <a href="#" onclick="navigateToService('{{ mapping.service_name }}')">
+                    {{ mapping.service_name }}
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <script>
+        function navigateToService(serviceName) {
+            const host = window.location.host; // Gets the current host dynamically
+            window.location.href = `http://${host}/${serviceName}`;
+        }
+    </script>
+</body>
+</html>

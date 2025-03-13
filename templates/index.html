@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NGINX Reverse Proxy GUI</title>
+    <style>
+        :root {
+            --primary-bg: #7BDCBA;
+            --primary-gradient: #9BC8FF;
+            --secondary-bg: #8DCOFF;
+            --secondary-gradient: #FFBBD3;
+            --tertiary-bg: #FCB9C2;
+            --tertiary-gradient: #FDD79D;
+            --text-color: #111111;
+            --box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.8);
+            --border-width: 3px;
+            --success-color: #4CAF50;
+            --error-color: #FF4D4D;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', 'Roboto', system-ui, sans-serif;
+        }
+
+        body {
+            background-color: #f2f2f2;
+            color: var(--text-color);
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            grid-template-rows: auto 1fr;
+            grid-template-areas:
+                "header header"
+                "form list";
+            gap: 2rem;
+            padding: 2rem;
+        }
+
+        .header {
+            grid-area: header;
+            background: var(--primary-bg);
+            border: var(--border-width) solid black;
+            box-shadow: var(--box-shadow);
+            padding: 2rem;
+            margin-bottom: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, transparent 0%, var(--primary-gradient) 100%);
+            opacity: 0.6;
+            z-index: 0;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            text-transform: uppercase;
+            font-weight: 900;
+            letter-spacing: -1px;
+            position: relative;
+            z-index: 1;
+            text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .form-container {
+            grid-area: form;
+            background: white;
+            border: var(--border-width) solid black;
+            box-shadow: var(--box-shadow);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .mappings-container {
+            grid-area: list;
+            background: white;
+            border: var(--border-width) solid black;
+            box-shadow: var(--box-shadow);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+        }
+
+        input {
+            padding: 1rem;
+            border: var(--border-width) solid black;
+            font-size: 1.1rem;
+            background-color: #f7f7f7;
+            transition: transform 0.2s ease;
+        }
+
+        input:focus {
+            outline: none;
+            transform: translateX(5px);
+            background-color: var(--tertiary-bg);
+            background: linear-gradient(135deg, var(--tertiary-bg) 0%, var(--tertiary-gradient) 100%);
+        }
+
+        button {
+            padding: 1rem 2rem;
+            background-color: var(--secondary-bg);
+            background: linear-gradient(135deg, var(--secondary-bg) 0%, var(--secondary-gradient) 100%);
+            color: black;
+            font-weight: 700;
+            text-transform: uppercase;
+            border: var(--border-width) solid black;
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            font-size: 1.1rem;
+            margin-top: 1rem;
+            align-self: flex-start;
+        }
+
+        button:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.8);
+        }
+
+        button:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.8);
+        }
+
+        .mappings h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: -1px;
+        }
+
+        .mappings {
+            margin-top: 0;
+            flex-grow: 1;
+        }
+
+        .mappings ul {
+            list-style-type: none;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .mappings li {
+            background: #f0f0f0;
+            border: var(--border-width) solid black;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.2s ease;
+            font-size: 1.1rem;
+            font-weight: 600;
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        .mappings li:hover {
+            transform: translateY(-5px);
+            box-shadow: 4px 9px 0 rgba(0, 0, 0, 0.5);
+            background: linear-gradient(135deg, var(--primary-bg) 0%, var(--primary-gradient) 100%);
+        }
+
+        .mapping-buttons {
+            display: flex;
+            gap: 0.8rem;
+        }
+
+        .mappings li button {
+            margin-top: 0;
+            padding: 0.5rem 1rem;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+        }
+
+        .mappings li button.delete {
+            background: #ff4d4d;
+            background: linear-gradient(135deg, #ff4d4d 0%, #ff8080 100%);
+        }
+
+        /* Toast notification system */
+        .toast-container {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            width: auto;
+            max-width: 400px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .toast {
+            padding: 1.2rem;
+            border: var(--border-width) solid black;
+            box-shadow: var(--box-shadow);
+            color: black;
+            font-weight: 700;
+            font-size: 1.1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: slideIn 0.3s forwards, slideOut 0.3s forwards 3s;
+            position: relative;
+            overflow: hidden;
+            max-width: 100%;
+        }
+
+        .toast.success {
+            background: var(--primary-bg);
+            background: linear-gradient(135deg, var(--primary-bg) 0%, var(--primary-gradient) 100%);
+        }
+
+        .toast.error {
+            background: var(--tertiary-bg);
+            background: linear-gradient(135deg, var(--tertiary-bg) 0%, #ff8080 100%);
+        }
+
+        .toast .close-btn {
+            background: none;
+            border: none;
+            box-shadow: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            margin: 0;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+            font-weight: bold;
+        }
+
+        .toast .close-btn:hover {
+            transform: scale(1.2);
+            box-shadow: none;
+        }
+
+        .toast::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 5px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            animation: timer 3s linear forwards;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        @keyframes timer {
+            from {
+                width: 100%;
+            }
+            to {
+                width: 0%;
+            }
+        }
+
+        /* Responsive design */
+        @media (max-width: 1024px) {
+            body {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto;
+                grid-template-areas:
+                    "header"
+                    "form"
+                    "list";
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            .mappings li {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .mapping-buttons {
+                align-self: flex-end;
+            }
+            
+            .toast-container {
+                right: 1rem;
+                left: 1rem;
+                max-width: calc(100% - 2rem);
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>NGINX Reverse Proxy</h1>
+    </header>
+
+    <div class="form-container">
+        <div class="form-group">
+            <label for="service_name">Service Name:</label>
+            <input type="text" id="service_name" placeholder="e.g., quote">
+        </div>
+        <div class="form-group">
+            <label for="backend_service">Backend Service:</label>
+            <input type="text" id="backend_service" placeholder="e.g., quote or 192.168.1.100">
+        </div>
+        <div class="form-group">
+            <label for="backend_port">Backend Port:</label>
+            <input type="text" id="backend_port" placeholder="e.g., 6969">
+        </div>
+        <div class="form-group">
+            <label for="protocol">Protocol:</label>
+            <select id="protocol">
+                <option value="http">HTTP</option>
+                <option value="https">HTTPS</option>
+            </select>
+        </div>
+        <button onclick="addMapping()">Add Mapping</button>
+    </div>
+
+    <div class="mappings-container">
+        <div class="mappings">
+            <h2>Current Mappings</h2>
+            <ul id="mapping-list">
+                {% for mapping in mappings %}
+                <li>
+                    <span>
+                        <a href="#" onclick="redirectWithoutPort('{{ mapping[1] }}')">{{ mapping[1] }}</a> →
+                        <a href="{{ mapping[4] }}://{{ mapping[2] }}:{{ mapping[3] }}" target="_blank">{{ mapping[4] }}://{{ mapping[2] }}:{{ mapping[3] }}</a>
+                    </span>
+                    <div class="mapping-buttons">
+                        <button onclick="toggleMapping({{ mapping[0] }}, {{ mapping[5] }})">
+                            {{ 'Disable' if mapping[5] else 'Enable' }}
+                        </button>
+                        <button class="delete" onclick="deleteMapping({{ mapping[0] }})">Delete</button>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <!-- Toast notification container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script>
+        // Toast notification system
+        function showToast(message, type = 'success') {
+            const toastContainer = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            toast.innerHTML = `
+                <span>${message}</span>
+                <button class="close-btn" onclick="this.parentElement.remove()">×</button>
+            `;
+            
+            toastContainer.appendChild(toast);
+            
+            // Auto remove after animation completes
+            setTimeout(() => {
+                toast.remove();
+            }, 3300);
+        }
+
+        async function addMapping() {
+            const serviceName = document.getElementById('service_name').value;
+            const backendService = document.getElementById('backend_service').value;
+            const backendPort = document.getElementById('backend_port').value;
+            const protocol = document.getElementById('protocol').value; // Get selected protocol
+
+            // Simple validation
+            if (!serviceName || !backendService || !backendPort) {
+                showToast('Please fill all fields', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/add_mapping', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        service_name: serviceName,
+                        backend_service: backendService,
+                        backend_port: backendPort,
+                        protocol: protocol // Include protocol in the request
+                    })
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    showToast('Mapping added successfully!', 'success');
+                    // Clear form fields
+                    document.getElementById('service_name').value = '';
+                    document.getElementById('backend_service').value = '';
+                    document.getElementById('backend_port').value = '';
+                    
+                    // Reload after toast displays
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showToast('Error: ' + result.error, 'error');
+                }
+            } catch (err) {
+                showToast('Network error. Please try again.', 'error');
+            }
+        }
+
+        async function deleteMapping(mappingId) {
+            try {
+                const response = await fetch(`/delete_mapping/${mappingId}`, {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showToast('Mapping deleted successfully!', 'success');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showToast('Error: ' + result.error, 'error');
+                }
+            } catch (err) {
+                showToast('Network error. Please try again.', 'error');
+            }
+        }
+
+        async function toggleMapping(mappingId, enabled) {
+            try {
+                const response = await fetch(`/toggle_mapping/${mappingId}`, {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showToast(`Mapping ${enabled ? 'disabled' : 'enabled'} successfully!`, 'success');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showToast('Error: ' + result.error, 'error');
+                }
+            } catch (err) {
+                showToast('Network error. Please try again.', 'error');
+            }
+        }
+
+        function redirectWithoutPort(serviceName) {
+            let baseUrl = window.location.hostname; // Get hostname without port
+            let url = `http://${baseUrl}/${serviceName}`;
+            window.open(url, "_blank");
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+services:
+  flask_nginx:
+    image: flask-nginx:latest
+    ports:
+      - "80:80"
+      - "443:443"
+      - "2323:5000"
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - ./nginx_mappings.db:/app/nginx_mappings.db  # Mount the file from host to container
+    restart: always
