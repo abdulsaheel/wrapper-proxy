@@ -14,16 +14,16 @@ NGINX_CONFIG_PATH = "/etc/nginx/conf.d/reverse_proxy.conf"
 NGINX_TEMPLATE = """
 server {{
     listen 80;
-    server_name api.hashira.io;
+    server_name api.garden.finance;
     return 301 https://$host$request_uri;
 }}
 
 server {{
     listen 443 ssl;
-    server_name api.hashira.io;
+    server_name api.garden.finance;
 
-    ssl_certificate /etc/letsencrypt/live/api.hashira.io/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/api.hashira.io/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/api.garden.finance/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/api.garden.finance/privkey.pem;
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers HIGH:!aNULL:!MD5;
 
